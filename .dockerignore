@@ -1,0 +1,8 @@
+.git
+*.md
+*.pyc
+*.pyo
+*.yml
+*.yaml
+Jenkinsfile
+LICENSE

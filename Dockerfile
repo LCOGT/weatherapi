@@ -1,11 +1,13 @@
-FROM golang:1.9-alpine
-MAINTAINER Austin Riba <ariba@lco.global>
+# Builder Container
+FROM golang:1.13-alpine as builder
 
 WORKDIR /go/src/weather
-EXPOSE 80
 
 COPY . .
-RUN go-wrapper download
-RUN go-wrapper install
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static"' -o weather-server .
 
-CMD ["go-wrapper", "run"]
+# Production container
+FROM scratch
+EXPOSE 8080
+COPY --from=builder /go/src/weather/weather-server /weather-server
+CMD [ "/weather-server" ]

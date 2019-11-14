@@ -1,4 +1,2 @@
-.git
-*.md
-*.yml
-LICENSE
+*.pyc
+*.pyo
