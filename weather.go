@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -189,11 +191,33 @@ func Query(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(b))
 }
 
+func getPortNumber() int {
+	// Check environment for configuration
+	value, exists := os.LookupEnv("PORT")
+	if !exists {
+		log.Println("Using default TCP port 8080...")
+		value = "8080"
+	}
+
+	// Convert to Integer
+	port, err := strconv.Atoi(value)
+	if err != nil {
+		panic(fmt.Sprintf("ERROR: unable to convert '%s' to Integer: %s", value, err))
+	}
+
+	// Return port number as Integer
+	return port
+}
+
 func main() {
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/query", Query)
-	// note that if you run locally, you'll have to change the port number, since Linux doesn't
-	// let you use ports below 1024 unless you run as a privileged user via sudo
-	log.Println("Starting server on http://127.0.0.1:80")
-	log.Fatal(http.ListenAndServe(":3005", nil))
+
+	// Default to unprivileged port 8080, so that this can be run by any
+	// standard user account. Let the user override using the environment.
+	port := getPortNumber()
+	log.Printf("Starting Weather API Server on http://127.0.0.1:%d/\n", port)
+
+	addr := fmt.Sprintf(":%d", port)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
