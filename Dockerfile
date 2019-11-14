@@ -9,5 +9,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflag
 # Production container
 FROM scratch
 EXPOSE 8080
-COPY --from=builder /go/src/weather/weather-server /weather-server
-CMD [ "/weather-server" ]
+WORKDIR /app
+COPY --from=builder /go/src/weather/*.json /app/
+COPY --from=builder /go/src/weather/weather-server /app/
+CMD [ "/app/weather-server" ]
