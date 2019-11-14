@@ -1,11 +1,19 @@
-Las Cumbres Observatory Weather Web Interface
-=============================================
+# Las Cumbres Observatory Weather API Server
 
-This is the source code for the Las Cumbres Observatory Weather Web Interface,
-which is deployed at: <https://weather.lco.global/>.
+This is the source code for the Las Cumbres Observatory Weather API Server,
+which is deployed at: <https://weather-api.lco.global/>. The API is documented
+on the [LCO Developers Documentation Website](https://developers.lco.global/#weather).
 
-Getting Started
----------------
+## Production Deployment
+
+This project is built automatically by the [LCO Jenkins Server](http://jenkins.lco.gtn/).
+Please see the [Jenkinsfile](Jenkinsfile) for further details.
+
+This project is deployed to the LCO Kubernetes Cluster. Please see the
+[LCO Helm Charts Repository](https://github.com/LCOGT/helm-charts) for
+further details.
+
+## Getting Started
 
 These instructions will get you a copy of the project up and running on your
 local machine for development and testing purposes.
@@ -14,39 +22,27 @@ local machine for development and testing purposes.
 
 This will build a Docker image named `weatherserver`, containing the server code:
 
-    $ docker build --pull -t weatherserver server
+```bash
+$ docker build --pull -t my-weather-server:latest .
+```
 
 This Docker image can be run by executing this command:
 
-    $ docker run -d weatherserver
-    
+```bash
+$ docker run --rm -it -p 8080:8080 my-weather-server:latest
+```
+
 #### Local development
 
 To run the web server locally:
 
 ```bash
-$ cd server/
 $ go run weather.go
 ```
 
-
 ### Weather Client
 
-This will build a Docker image named `weatherclient`, containing the client code:
-
-    $ docker build --pull -t weatherclient client
-
-This Docker image can be run by executing this command:
-
-    $ docker run -d -p 80:80 weatherclient
-    
-#### Local development
-
-To run the client locally:
-```bash
-$ cd client/
-$ npm run dev
-```
+Please see the [LCO Weather Client Repository](https://github.com/LCOGT/weatherclient).
 
 License
 -------
