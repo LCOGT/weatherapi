@@ -122,7 +122,7 @@ func ParamsToEsQuery(site string, datumName string, start string, end string, ag
 }
 
 func EsSearch(SearchString []byte, agg bool) (EsResponse, error) {
-	esUrl := "http://elasticsearch.lco.gtn:9200/mysql-telemetry-*/_search?pretty"
+	esUrl := "https://opensearch.lco.gtn/mysql-telemetry-*/_search?pretty"
 	res, err := http.Post(esUrl, "application/json", bytes.NewBuffer(SearchString))
 	if err != nil {
 		panic(err)
