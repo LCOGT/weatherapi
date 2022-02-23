@@ -42,7 +42,7 @@ type Aggregations struct {
 	TimestampMeasuredAggregation Aggregation `json:"date(timestampmeasured15m)"`
 }
 
-type EsAggResponse struct {
+type OsAggResponse struct {
 	Aggregations Aggregations `json:"aggregations"`
 }
 
@@ -61,11 +61,11 @@ type Hit struct {
 	SubHits []SubHit `json:"hits"`
 }
 
-type EsStdResponse struct {
+type OsStdResponse struct {
 	Hit Hit `json:"hits"`
 }
 
-type EsResponse interface {
+type OsResponse interface {
 	toDatums() []Datum
 }
 type Datum struct {
@@ -75,20 +75,20 @@ type Datum struct {
 	TimeStampMeasured string
 }
 
-func (esStdResponse *EsStdResponse) toDatums() []Datum {
+func (osStdResponse *OsStdResponse) toDatums() []Datum {
 	var datums []Datum
-	for _, subhit := range esStdResponse.Hit.SubHits {
+	for _, subhit := range osStdResponse.Hit.SubHits {
 		datums = append(datums, Datum{subhit.Source.TimeStamp, subhit.Source.ValueFloat, subhit.Source.ValueString, subhit.Source.TimeStampMeasured})
 	}
 	return datums
 }
 
-func (esAggResponse *EsAggResponse) toDatums() []Datum {
+func (osAggResponse *OsAggResponse) toDatums() []Datum {
 	var datums []Datum
-	for index, bucket := range esAggResponse.Aggregations.TimestampAggregation.Buckets {
-		if index < len(esAggResponse.Aggregations.TimestampMeasuredAggregation.Buckets) {
+	for index, bucket := range osAggResponse.Aggregations.TimestampAggregation.Buckets {
+		if index < len(osAggResponse.Aggregations.TimestampMeasuredAggregation.Buckets) {
 
-			datums = append(datums, Datum{bucket.KeyAsString, bucket.Value.Val, "", esAggResponse.Aggregations.TimestampMeasuredAggregation.Buckets[index].KeyAsString})
+			datums = append(datums, Datum{bucket.KeyAsString, bucket.Value.Val, "", osAggResponse.Aggregations.TimestampMeasuredAggregation.Buckets[index].KeyAsString})
 
 		} else {
 			datums = append(datums, Datum{bucket.KeyAsString, bucket.Value.Val, "", ""})
@@ -101,7 +101,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Please see the documentation for the weather API")
 }
 
-func ParamsToEsQuery(site string, datumName string, start string, end string, agg bool) ([]byte, error) {
+func ParamsToOsQuery(site string, datumName string, start string, end string, agg bool) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	query := DatumQuery{site, datumName, start, end}
 
@@ -121,27 +121,27 @@ func ParamsToEsQuery(site string, datumName string, start string, end string, ag
 	return buf.Bytes(), nil
 }
 
-func EsSearch(SearchString []byte, agg bool) (EsResponse, error) {
-	esUrl := "https://opensearch.lco.gtn/mysql-telemetry-*/_search?pretty"
-	res, err := http.Post(esUrl, "application/json", bytes.NewBuffer(SearchString))
+func OpenSearch(SearchString []byte, agg bool) (OsResponse, error) {
+	osUrl := "https://opensearch.lco.global/mysql-telemetry-*/_search?pretty"
+	res, err := http.Post(osUrl, "application/json", bytes.NewBuffer(SearchString))
 	if err != nil {
 		panic(err)
 	}
 	body, err := ioutil.ReadAll(res.Body)
-	var esr EsResponse
+	var osr OsResponse
 	// Golang doesn't like commas in keys
 	newbody := string(body)
 	replaced := strings.Replace(newbody, ",15m", "15m", -1)
 	if agg {
-		esr = new(EsAggResponse)
+		osr = new(OsAggResponse)
 	} else {
-		esr = new(EsStdResponse)
+		osr = new(OsStdResponse)
 	}
-	err = json.Unmarshal([]byte(replaced), esr)
+	err = json.Unmarshal([]byte(replaced), osr)
 	if err != nil {
-		return esr, err
+		return osr, err
 	}
-	return esr, nil
+	return osr, nil
 
 }
 
@@ -169,17 +169,17 @@ func Query(w http.ResponseWriter, r *http.Request) {
 		aggBool = true
 	}
 
-	parsed, err := ParamsToEsQuery(site, datumName, start, end, aggBool)
+	parsed, err := ParamsToOsQuery(site, datumName, start, end, aggBool)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	esr, err := EsSearch(parsed, aggBool)
+	osr, err := OpenSearch(parsed, aggBool)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	datums := esr.toDatums()
+	datums := osr.toDatums()
 
 	b, err := json.Marshal(datums)
 	if err != nil {
